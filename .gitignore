@@ -1,0 +1,10 @@
+*.exe
+*.o
+*.obj
+*.out
+node_modules/
+site.zip
+deploy_netlify.js
+push_to_github.bat
+.DS_Store
+Thumbs.db
