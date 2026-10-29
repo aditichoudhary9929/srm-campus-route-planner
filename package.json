@@ -1,0 +1,21 @@
+{
+  "name": "srm-campus-route-planner",
+  "version": "2.0.0",
+  "description": "Interactive Web & DSA Graph Route Planner for SRM IST Delhi-NCR Campus",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "srm-ist",
+    "campus-navigator",
+    "dsa",
+    "dijkstra",
+    "graph-algorithms",
+    "trie-autocomplete",
+    "bfs-dfs"
+  ],
+  "author": "Aditi Choudhary",
+  "license": "MIT"
+}
