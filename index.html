@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRM IST Campus Route Planner & Navigator | DSA Project</title>
+    <meta name="description" content="Interactive DSA Graph Route Planner, Dijkstra Shortest Path, BFS/DFS Visualizer for SRM IST Delhi-NCR Campus.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- App Top Navigation Header -->
+    <header class="app-header">
+        <div class="brand-section">
+            <div class="brand-logo-badge">SRM</div>
+            <div class="brand-text">
+                <h1>SRM IST Campus Route Planner <span style="font-size: 0.72rem; padding: 2px 7px; border-radius: 4px; background: rgba(59, 130, 246, 0.2); color: #60A5FA; font-weight: 600;">v2.0 Web</span></h1>
+                <p>Delhi-NCR Campus (Modinagar) &bull; DSA Graph Navigation Engine</p>
+            </div>
+            <div class="header-status-badge">
+                <span class="status-dot"></span>
+                <span id="hostStatusPill">Live Web App</span>
+            </div>
+            <div class="header-weather-badge" title="SRM Modinagar Campus Live Weather Condition">
+                <span>🌤️</span>
+                <span>Modinagar 28°C &bull; Ideal Walking</span>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <button class="btn-header" id="btnQuickSearch" title="Quick Search (Ctrl + K)">
+                <span>🔍</span> <span class="hotkey-label">Ctrl K</span>
+            </button>
+            <button class="btn-header" id="btnRandomRoute" title="Pick random start and destination">
+                <span>🎲</span> Random
+            </button>
+            <button class="btn-header" id="btnResetView" title="Reset map zoom and selection">
+                <span>🔄</span> Reset
+            </button>
+            <button class="btn-header primary" id="btnAdminUnlock">
+                <span>🔒</span> Admin
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace Layout -->
+    <main class="app-layout">
+        
+        <!-- Left Sidebar Controls -->
+        <aside class="app-sidebar">
+            
+            <!-- Navigation Tabs Bar -->
+            <nav class="sidebar-tabs">
+                <button class="tab-btn active" data-tab="tab-route">
+                    <span class="tab-icon">🚀</span>
+                    <span>Route</span>
+                </button>
+                <button class="tab-btn" data-tab="tab-search">
+                    <span class="tab-icon">🔍</span>
+                    <span>Search</span>
+                </button>
+                <button class="tab-btn" data-tab="tab-traversal">
+                    <span class="tab-icon">🌊</span>
+                    <span>Traverse</span>
+                </button>
+                <button class="tab-btn" data-tab="tab-detour">
+                    <span class="tab-icon">🚧</span>
+                    <span>Detour</span>
+                </button>
+                <button class="tab-btn" data-tab="tab-history">
+                    <span class="tab-icon">📜</span>
+                    <span>History</span>
+                </button>
+                <button class="tab-btn" data-tab="tab-admin">
+                    <span class="tab-icon">⚙️</span>
+                    <span>Admin</span>
+                </button>
+                <button class="tab-btn" data-tab="tab-dsa">
+                    <span class="tab-icon">📊</span>
+                    <span>DSA Specs</span>
+                </button>
+            </nav>
+
+            <!-- Scrollable Content Container -->
+            <div class="tab-content-container">
+
+                <!-- TAB 1: ROUTE PLANNER -->
+                <div class="tab-pane active" id="tab-route">
+                    <div class="glass-card">
+                        <div class="card-title">
+                            <span>Route Configuration</span>
+                            <span class="badge" id="routeModeBadge">Dijkstra + MinHeap</span>
+                        </div>
+
+                        <!-- Routing Mode Toggle -->
+                        <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+                            <button class="btn-header" id="btnModeSingle" style="flex:1; justify-content:center; background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.4);">
+                                Point-to-Point
+                            </button>
+                            <button class="btn-header" id="btnModeMulti" style="flex:1; justify-content:center;">
+                                Multi-Stop (A&rarr;B&rarr;C)
+                            </button>
+                        </div>
+
+                        <!-- Point to Point Inputs -->
+                        <div id="singleRouteContainer">
+                            <div class="form-group">
+                                <label class="form-label" for="inputStart">
+                                    <span>Starting Landmark</span>
+                                    <span style="color: #10B981; font-size: 0.72rem;">● Start Point</span>
+                                </label>
+                                <div class="input-with-icon">
+                                    <span class="input-icon">🟢</span>
+                                    <input type="text" id="inputStart" class="text-input" placeholder="Search or click on map (e.g. Main Gate)..." autocomplete="off">
+                                    <div class="autocomplete-dropdown" id="dropdownStart"></div>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; justify-content: center; margin: -6px 0 8px;">
+                                <button class="btn-header" id="btnSwapPoints" style="padding: 4px 10px; font-size: 0.75rem;" title="Swap Start & Destination">
+                                    ⇅ Swap
+                                </button>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="inputEnd">
+                                    <span>Destination Landmark</span>
+                                    <span style="color: #EF4444; font-size: 0.72rem;">● End Point</span>
+                                </label>
+                                <div class="input-with-icon">
+                                    <span class="input-icon">🔴</span>
+                                    <input type="text" id="inputEnd" class="text-input" placeholder="Search or click on map (e.g. Central Library)..." autocomplete="off">
+                                    <div class="autocomplete-dropdown" id="dropdownEnd"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Multi-stop Stops List -->
+                        <div id="multiRouteContainer" style="display: none;">
+                            <label class="form-label" style="margin-bottom: 8px;">Selected Ordered Stops:</label>
+                            <div class="stops-list" id="stopsListContainer">
+                                <!-- Dynamic Stops rendered here -->
+                            </div>
+                            <div class="form-group">
+                                <div class="input-with-icon">
+                                    <span class="input-icon">➕</span>
+                                    <input type="text" id="inputAddStop" class="text-input" placeholder="Type next stop to add..." autocomplete="off">
+                                    <div class="autocomplete-dropdown" id="dropdownAddStop"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 8px; margin: 12px 0;">
+                            <input type="checkbox" id="checkAvoidBlocked" checked style="accent-color: #3B82F6; cursor: pointer;">
+                            <label for="checkAvoidBlocked" style="font-size: 0.78rem; color: var(--text-muted); cursor: pointer;">
+                                Automatically avoid blocked / detour roads
+                            </label>
+                        </div>
+
+                        <button class="btn-primary-action" id="btnFindRoute">
+                            <span>🧭</span> Calculate Optimal Route
+                        </button>
+                    </div>
+
+                    <!-- Dynamic Route Result Summary -->
+                    <div class="route-summary-panel" id="routeSummaryPanel">
+                        <div class="card-title" style="margin-bottom: 6px;">
+                            <span>Route Statistics</span>
+                            <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34D399;">Path Found</span>
+                        </div>
+
+                        <div class="metrics-grid">
+                            <div class="metric-box">
+                                <div class="metric-value" id="valDistance">0 m</div>
+                                <div class="metric-label">Total Distance</div>
+                            </div>
+                            <div class="metric-box">
+                                <div class="metric-value" id="valTime">0 min</div>
+                                <div class="metric-label">Walking Time</div>
+                            </div>
+                            <div class="metric-box">
+                                <div class="metric-value" id="valCalories">0 kcal</div>
+                                <div class="metric-label">Burned</div>
+                            </div>
+                        </div>
+
+                        <div style="font-size: 0.74rem; color: var(--text-muted); margin-bottom: 8px; display: flex; justify-content: space-between;">
+                            <span>DSA Nodes Explored: <strong id="valExploredNodes" style="color: #F8FAFC;">0</strong></span>
+                            <span>Algorithm: <strong style="color: #60A5FA;">O((V+E) log V)</strong></span>
+                        </div>
+
+                        <!-- Live Route Walk Simulation Controls -->
+                        <div class="simulation-bar" style="margin-bottom: 12px; padding: 8px 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                            <div style="font-size: 0.74rem; font-weight: 600; color: #38BDF8; display: flex; align-items: center; gap: 5px;">
+                                <span id="simStatusIcon">🚶</span> <span id="simStatusText">Ready to Simulate</span>
+                            </div>
+                            <div style="display: flex; gap: 6px;">
+                                <button class="btn-header" id="btnSimulateWalk" style="padding: 4px 8px; font-size: 0.72rem;" title="Start animated route walk">
+                                    ▶️ Play
+                                </button>
+                                <button class="btn-header" id="btnPauseSimulate" style="padding: 4px 8px; font-size: 0.72rem; display:none;" title="Pause simulation">
+                                    ⏸️ Pause
+                                </button>
+                                <button class="btn-header" id="btnResetSimulate" style="padding: 4px 8px; font-size: 0.72rem;" title="Reset simulation">
+                                    🔄 Reset
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Action buttons: Share & Print -->
+                        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                            <button class="btn-secondary-action" id="btnShareRoute" style="flex:1; margin-top:0; font-size:0.75rem; padding: 6px;">
+                                🔗 Share Route Link
+                            </button>
+                            <button class="btn-secondary-action" id="btnPrintRoute" style="flex:1; margin-top:0; font-size:0.75rem; padding: 6px;">
+                                🖨️ Print Directions
+                            </button>
+                        </div>
+
+                        <label class="form-label">Turn-by-Turn Directions:</label>
+                        <div class="directions-list" id="directionsList"></div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: SEARCH & NEAREST BY TYPE -->
+                <div class="tab-pane" id="tab-search">
+                    <div class="glass-card">
+                        <div class="card-title">
+                            <span>Instant Trie Autocomplete</span>
+                            <span class="badge">O(L) Prefix Search</span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Search Any Campus Landmark</label>
+                            <div class="input-with-icon">
+                                <span class="input-icon">🔍</span>
+                                <input type="text" id="inputGlobalSearch" class="text-input" placeholder="Type name, abbreviation, or ID..." autocomplete="off">
+                                <div class="autocomplete-dropdown" id="dropdownGlobalSearch"></div>
+                            </div>
+                        </div>
+                        <div id="searchResultCard" style="display: none; padding: 12px; background: rgba(15, 23, 42, 0.6); border-radius: var(--radius-sm); border: 1px solid var(--border-glass);">
+                            <div id="searchResultName" style="font-weight: 700; font-size: 0.95rem; margin-bottom: 4px;"></div>
+                            <div id="searchResultDesc" style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 10px;"></div>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn-header" id="btnSearchSetStart" style="flex:1; justify-content:center;">Set as Start</button>
+                                <button class="btn-header primary" id="btnSearchSetEnd" style="flex:1; justify-content:center;">Set as Destination</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card">
+                        <div class="card-title">
+                            <span>Nearest Place Locator</span>
+                            <span class="badge">Dijkstra Shortest</span>
+                        </div>
+                        <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 12px;">
+                            Quickly find the closest food court, medical centre, sports court, or ATM from your current location.
+                        </p>
+                        <div class="form-group">
+                            <label class="form-label">I am currently at:</label>
+                            <select id="selectNearestFrom" class="select-input"></select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Looking for nearest:</label>
+                            <select id="selectNearestType" class="select-input">
+                                <option value="canteen">🍔 Canteen / Food Hub</option>
+                                <option value="hospital">🏥 Health Care / Medical</option>
+                                <option value="sports">⚽ Sports Ground / Arena</option>
+                                <option value="hostel">🛏️ Student Hostel</option>
+                                <option value="academic">🏛️ Academic Block</option>
+                                <option value="library">📚 Central Library</option>
+                                <option value="lab">💻 Computer / Workshop Lab</option>
+                                <option value="facility">🏧 Bank / ATM / Auditorium</option>
+                                <option value="parking">🅿️ Parking Lot</option>
+                            </select>
+                        </div>
+                        <button class="btn-primary-action" id="btnFindNearest">
+                            <span>📍</span> Locate Nearest Facility
+                        </button>
+
+                        <div id="nearestResultBox" style="display: none; margin-top: 14px; padding: 12px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-sm);">
+                            <div style="font-size: 0.75rem; color: #34D399; font-weight: 600;">CLOSEST MATCH FOUND</div>
+                            <div id="nearestResultName" style="font-weight: 700; font-size: 0.95rem; margin: 4px 0;"></div>
+                            <div id="nearestResultDist" style="font-size: 0.8rem; color: var(--text-muted);"></div>
+                            <button class="btn-secondary-action" id="btnNavigateToNearest" style="margin-top: 8px;">
+                                Draw Route to This Location &rarr;
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: GRAPH TRAVERSALS (BFS / DFS) -->
+                <div class="tab-pane" id="tab-traversal">
+                    <div class="glass-card">
+                        <div class="card-title">
+                            <span>Graph Exploration Visualizer</span>
+                            <span class="badge">BFS / DFS Animation</span>
+                        </div>
+                        <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 12px;">
+                            Watch how Breadth-First Search (Queue / level wave) and Depth-First Search (Stack / backtrack) traverse the campus network.
+                        </p>
+                        <div class="form-group">
+                            <label class="form-label">Starting Exploration Node:</label>
+                            <select id="selectTraversalStart" class="select-input"></select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Traversal Algorithm:</label>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn-header" id="btnChooseBFS" style="flex:1; justify-content:center; background: rgba(139, 92, 246, 0.2); border-color: rgba(139, 92, 246, 0.4);">
+                                    BFS (Queue)
+                                </button>
+                                <button class="btn-header" id="btnChooseDFS" style="flex:1; justify-content:center;">
+                                    DFS (Stack)
+                                </button>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 14px;">
+                            <button class="btn-primary-action" id="btnStartTraversal" style="background: linear-gradient(135deg, #7C3AED, #4F46E5);">
+                                <span>▶️</span> Run Visual Traversal
+                            </button>
+                            <button class="btn-header" id="btnStopTraversal" title="Stop Animation">
+                                ⏹️ Stop
+                            </button>
+                        </div>
+
+                        <div id="traversalProgressBox" style="margin-top: 14px; display: none;">
+                            <div class="card-title" style="font-size: 0.82rem;">
+                                <span>Exploration Sequence</span>
+                                <span class="badge" id="traversalStepBadge">Step 0/21</span>
+                            </div>
+                            <div id="traversalSequenceChips" style="display: flex; flex-wrap: wrap; gap: 4px; max-height: 150px; overflow-y: auto;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: ROAD BLOCKS & DETOURS -->
+                <div class="tab-pane" id="tab-detour">
+                    <div class="glass-card">
+                        <div class="card-title">
+                            <span>Simulate Road Blockades</span>
+                            <span class="badge" id="blockedCountBadge">0 Blocked</span>
+                        </div>
+                        <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 12px;">
+                            Toggle construction or blocked roads. The navigation engine will calculate real-time alternate detours!
+                        </p>
+                        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                            <button class="btn-header" id="btnClearAllBlocks" style="flex:1; font-size: 0.76rem; justify-content: center;">
+                                Clear All Blocks
+                            </button>
+                            <button class="btn-header" id="btnBlockDemoRoad" style="flex:1; font-size: 0.76rem; justify-content: center;">
+                                Block Main Road
+                            </button>
+                        </div>
+                        <div style="max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;" id="roadBlockListContainer">
+                            <!-- Populated with toggle switches for all edges -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 5: RECENT SEARCHES (CIRCULAR QUEUE) -->
+                <div class="tab-pane" id="tab-history">
+                    <div class="glass-card">
+                        <div class="card-title">
+                            <span>Recent Searches History</span>
+                            <span class="badge">Circular Queue (Cap 10)</span>
+                        </div>
+                        <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 12px;">
+                            Stores the last 10 calculated routes using FIFO circular queue eviction.
+                        </p>
+                        <div id="historyListContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 380px; overflow-y: auto;">
+                            <!-- Dynamic history items -->
+                        </div>
+                        <button class="btn-secondary-action" id="btnClearHistory" style="margin-top: 12px;">
+                            🗑️ Clear Search History
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TAB 6: ADMIN MANAGEMENT -->
+                <div class="tab-pane" id="tab-admin">
+                    <div class="glass-card" id="adminLockedState">
+                        <div class="card-title">
+                            <span>Admin Authentication</span>
+                            <span class="badge" style="background: rgba(244, 63, 94, 0.2); color: #FB7185;">Locked</span>
+                        </div>
+                        <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 14px;">
+                            Enter administrative passcode to unlock campus topology editing (add/remove locations & roads).
+                        </p>
+                        <div class="form-group">
+                            <label class="form-label">Admin Security PIN (Default: <code>srm123</code>)</label>
+                            <input type="password" id="inputAdminPin" class="text-input" placeholder="Enter PIN..." autocomplete="off">
+                        </div>
+                        <button class="btn-primary-action" id="btnSubmitAdminPin">
+                            <span>🔓</span> Unlock Admin Panel
+                        </button>
+                    </div>
+
+                    <div class="glass-card" id="adminUnlockedState" style="display: none;">
+                        <div class="card-title">
+                            <span>Campus Topology Editor</span>
+                            <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34D399;">Unlocked</span>
+                        </div>
+
+                        <!-- Add Location Form -->
+                        <div style="font-size: 0.82rem; font-weight: 600; margin-bottom: 8px; color: #60A5FA;">Add New Landmark</div>
+                        <div class="form-group">
+                            <input type="text" id="inputNewNodeName" class="text-input" placeholder="Location Name (e.g. Biotech_Block)">
+                        </div>
+                        <div class="form-group">
+                            <select id="selectNewNodeType" class="select-input">
+                                <option value="academic">Academic</option>
+                                <option value="lab">Lab / Workshop</option>
+                                <option value="hostel">Hostel</option>
+                                <option value="canteen">Canteen</option>
+                                <option value="sports">Sports</option>
+                                <option value="hospital">Hospital</option>
+                                <option value="facility">Facility</option>
+                                <option value="parking">Parking</option>
+                            </select>
+                        </div>
+                        <button class="btn-secondary-action" id="btnAddNodeSubmit">
+                            ➕ Add Landmark
+                        </button>
+
+                        <hr style="border: none; border-top: 1px solid var(--border-glass); margin: 16px 0;">
+
+                        <!-- Add Road Form -->
+                        <div style="font-size: 0.82rem; font-weight: 600; margin-bottom: 8px; color: #60A5FA;">Connect New Road</div>
+                        <div class="form-group">
+                            <select id="selectEdgeFrom" class="select-input"></select>
+                        </div>
+                        <div class="form-group">
+                            <select id="selectEdgeTo" class="select-input"></select>
+                        </div>
+                        <div class="form-group">
+                            <input type="number" id="inputEdgeWeight" class="text-input" placeholder="Distance in meters (e.g. 120)">
+                        </div>
+                        <button class="btn-secondary-action" id="btnAddEdgeSubmit">
+                            🛣️ Connect Road
+                        </button>
+
+                        <hr style="border: none; border-top: 1px solid var(--border-glass); margin: 16px 0;">
+                        <button class="btn-header" id="btnAdminLockSession" style="width: 100%; justify-content: center; color: var(--accent-rose);">
+                            🔒 Lock Admin Session
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TAB 7: DSA COMPLEXITY & SPECS -->
+                <div class="tab-pane" id="tab-dsa">
+                    <div class="glass-card">
+                        <div class="card-title">
+                            <span>Data Structure Complexity</span>
+                            <span class="badge">SRM DSA Spec</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.78rem;">
+                            <div style="padding: 8px; background: rgba(15, 23, 42, 0.4); border-radius: var(--radius-sm); border: 1px solid var(--border-glass);">
+                                <div style="font-weight: 600; color: #38BDF8;">Dijkstra's Algorithm (Min-Heap)</div>
+                                <div style="color: var(--text-muted); font-size: 0.72rem;">Time: <code>O((V + E) log V)</code> | Space: <code>O(V)</code></div>
+                                <div style="color: var(--text-subtle); font-size: 0.7rem; margin-top: 2px;">Optimal for non-negative road distances across campus.</div>
+                            </div>
+                            <div style="padding: 8px; background: rgba(15, 23, 42, 0.4); border-radius: var(--radius-sm); border: 1px solid var(--border-glass);">
+                                <div style="font-weight: 600; color: #A78BFA;">Trie Autocomplete (Prefix Tree)</div>
+                                <div style="color: var(--text-muted); font-size: 0.72rem;">Time: <code>O(L)</code> lookup where L = prefix length</div>
+                                <div style="color: var(--text-subtle); font-size: 0.7rem; margin-top: 2px;">Instant multi-word place recommendation.</div>
+                            </div>
+                            <div style="padding: 8px; background: rgba(15, 23, 42, 0.4); border-radius: var(--radius-sm); border: 1px solid var(--border-glass);">
+                                <div style="font-weight: 600; color: #34D399;">BFS & DFS Graph Traversals</div>
+                                <div style="color: var(--text-muted); font-size: 0.72rem;">Time: <code>O(V + E)</code> | Space: <code>O(V)</code></div>
+                                <div style="color: var(--text-subtle); font-size: 0.7rem; margin-top: 2px;">Reachability analysis and zone radius searches.</div>
+                            </div>
+                            <div style="padding: 8px; background: rgba(15, 23, 42, 0.4); border-radius: var(--radius-sm); border: 1px solid var(--border-glass);">
+                                <div style="font-weight: 600; color: #FBBF24;">Circular Queue Buffer</div>
+                                <div style="color: var(--text-muted); font-size: 0.72rem;">Enqueue / Dequeue: <code>O(1)</code> | Space: <code>O(K)</code></div>
+                                <div style="color: var(--text-subtle); font-size: 0.7rem; margin-top: 2px;">Stores last 10 routes with circular pointer eviction.</div>
+                            </div>
+                        </div>
+
+                        <hr style="border: none; border-top: 1px solid var(--border-glass); margin: 14px 0;">
+
+                        <div class="card-title" style="font-size: 0.85rem;">
+                            <span>Active Graph Topology</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.76rem;">
+                            <div style="padding: 6px 10px; background: rgba(255, 255, 255, 0.02); border-radius: 4px;">
+                                Total Nodes (V): <strong id="specTotalNodes" style="color: #60A5FA;">21</strong>
+                            </div>
+                            <div style="padding: 6px 10px; background: rgba(255, 255, 255, 0.02); border-radius: 4px;">
+                                Total Roads (E): <strong id="specTotalEdges" style="color: #60A5FA;">30</strong>
+                            </div>
+                            <div style="padding: 6px 10px; background: rgba(255, 255, 255, 0.02); border-radius: 4px;">
+                                Graph Type: <strong style="color: #34D399;">Undirected</strong>
+                            </div>
+                            <div style="padding: 6px 10px; background: rgba(255, 255, 255, 0.02); border-radius: 4px;">
+                                Weights: <strong style="color: #34D399;">Metric (m)</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+
+        <!-- Right Side: Interactive SVG Campus Map Viewport -->
+        <section class="map-viewport-container" id="mapViewport">
+            
+            <!-- Layer Toggles on Top Right -->
+            <div class="map-layer-toggles">
+                <button class="layer-chip active" id="toggleLayerNames">🏷️ Names</button>
+                <button class="layer-chip active" id="toggleLayerDistances">📏 Distances</button>
+                <button class="layer-chip active" id="toggleLayerZones">🗺️ Campus Zones</button>
+            </div>
+
+            <!-- Floating Zoom & Reset Controls on Bottom Right -->
+            <div class="map-floating-controls">
+                <button class="control-btn" id="btnZoomIn" title="Zoom In">+</button>
+                <button class="control-btn" id="btnZoomOut" title="Zoom Out">&minus;</button>
+                <button class="control-btn" id="btnCenterMap" title="Center View">🎯</button>
+            </div>
+
+            <!-- Floating Legend Dock on Bottom Left -->
+            <div class="map-legend-dock">
+                <div class="legend-item"><span class="legend-dot" style="background: #38BDF8;"></span> Academic</div>
+                <div class="legend-item"><span class="legend-dot" style="background: #60A5FA;"></span> Hostel</div>
+                <div class="legend-item"><span class="legend-dot" style="background: #FB923C;"></span> Food</div>
+                <div class="legend-item"><span class="legend-dot" style="background: #4ADE80;"></span> Sports</div>
+                <div class="legend-item"><span class="legend-dot" style="background: #F43F5E;"></span> Hospital</div>
+                <div class="legend-item"><span class="legend-dot" style="background: #C084FC;"></span> Facility</div>
+            </div>
+
+            <!-- Node Context Popover Card -->
+            <div class="node-popover" id="nodePopover">
+                <div class="popover-header">
+                    <span class="popover-icon" id="popoverIcon">🏛️</span>
+                    <div>
+                        <div class="popover-title" id="popoverTitle">Landmark</div>
+                        <span class="badge" id="popoverBadge" style="font-size: 0.65rem; padding: 2px 6px;">academic</span>
+                    </div>
+                </div>
+                <div class="popover-desc" id="popoverDesc">Description goes here</div>
+                <div class="popover-actions">
+                    <button class="btn-popover set-start" id="btnPopoverSetStart">Set Start 🟢</button>
+                    <button class="btn-popover set-dest" id="btnPopoverSetEnd">Set Dest 🔴</button>
+                </div>
+                <button class="btn-secondary-action" id="btnPopoverAddWaypoint" style="margin-top: 6px; font-size: 0.72rem; padding: 4px;">
+                    + Add to Multi-Stop Route
+                </button>
+            </div>
+
+            <!-- Dynamic SVG Canvas -->
+            <svg id="campusSvg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                    <!-- Road Glow Filter -->
+                    <filter id="glowEffect" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="3" result="blur" />
+                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                    </filter>
+                    
+                    <!-- Arrow Marker for Directed steps -->
+                    <marker id="routeArrow" markerWidth="8" markerHeight="8" refX="5" refY="4" orient="auto">
+                        <polygon points="0 1, 6 4, 0 7" fill="#38BDF8" />
+                    </marker>
+                </defs>
+
+                <!-- Layer 1: Zones Backgrounds -->
+                <g id="layerZones"></g>
+
+                <!-- Layer 2: Campus Roads / Edges -->
+                <g id="layerRoads"></g>
+
+                <!-- Layer 3: Active Route Overlay Path (Glow & Pulse) -->
+                <g id="layerActiveRoute"></g>
+
+                <!-- Layer 4: Campus Landmark Nodes -->
+                <g id="layerNodes"></g>
+
+                <!-- Layer 5: Animated Pedestrian Walker Marker -->
+                <g id="layerWalker" style="display: none;">
+                    <circle id="walkerPulse" r="14" fill="rgba(56, 189, 248, 0.35)" />
+                    <circle id="walkerBase" r="9" fill="#0284C7" stroke="#FFF" stroke-width="2.5" />
+                    <text id="walkerIcon" text-anchor="middle" dominant-baseline="central" font-size="11">🚶</text>
+                </g>
+            </svg>
+
+            <!-- Interactive Toast Notification -->
+            <div id="toastNotification" class="toast-notice"></div>
+
+        </section>
+
+    </main>
+
+    <!-- Core Scripts -->
+    <script src="dsa.js"></script>
+    <script src="map-data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
