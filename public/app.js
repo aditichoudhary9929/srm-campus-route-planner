@@ -1361,8 +1361,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check Host Environment
     const hostPill = document.getElementById('hostStatusPill');
     if (hostPill) {
-        if (window.location.hostname.includes('netlify.app')) {
-            hostPill.textContent = 'Netlify Production';
+        if (window.location.hostname.includes('srmrouteplanner.netlify.app') || window.location.hostname.includes('netlify.app')) {
+            hostPill.textContent = 'Live on Netlify';
+        } else if (window.location.hostname.includes('github.io')) {
+            hostPill.textContent = 'Live on GitHub Pages';
         } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             hostPill.textContent = 'Localhost :3000 Active';
         } else {

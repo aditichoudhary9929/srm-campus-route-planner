@@ -3,6 +3,11 @@
   "version": "2.0.0",
   "description": "Interactive Web & DSA Graph Route Planner for SRM IST Delhi-NCR Campus",
   "main": "server.js",
+  "homepage": "https://srmrouteplanner.netlify.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aditichoudhary9929/srm-campus-route-planner.git"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js"
@@ -14,7 +19,8 @@
     "dijkstra",
     "graph-algorithms",
     "trie-autocomplete",
-    "bfs-dfs"
+    "bfs-dfs",
+    "netlify"
   ],
   "author": "Aditi Choudhary",
   "license": "MIT"
